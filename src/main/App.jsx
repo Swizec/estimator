@@ -10,12 +10,13 @@ function App() {
     const cards = useSelector((state) => state.cards.cards);
     const columns = useSelector((state) => state.cards.columns);
     const displayMode = useSelector((state) => parseInt(state.cards.displayMode, 10));
+    const lastChanged = useSelector((state) => parseInt(state.cards.lastChanged, 10));
     const appErrorDescription = useSelector((state) => state.cards.appErrorDescription);
     const dispatch = useDispatch();
 
     if (appState === LOADING_STATES.READY) {
         return (
-            <Estimator cards={cards} columns={columns} dispatch={dispatch} displayMode={displayMode} />
+            <Estimator cards={cards} columns={columns} dispatch={dispatch} displayMode={displayMode} lastChanged={lastChanged} />
         );
     }
 

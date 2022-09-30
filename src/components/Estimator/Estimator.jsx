@@ -12,8 +12,11 @@ import { addCard, changeDisplayMode, clearBoard } from '~/actions';
 import '~/components/Estimator/Estimator.css';
 import { DISPLAY_MODES } from '~/constants';
 import PickDisplayMode from '~/components/PickDisplayMode/PickDisplayMode';
+import Timer from '~/components/Timer/Timer';
 
-function Estimator({ columns, cards, displayMode }) {
+function Estimator({
+    columns, cards, displayMode, lastChanged,
+}) {
     const dispatch = useDispatch();
 
     const columnsComponents = columns.map(
@@ -35,6 +38,7 @@ function Estimator({ columns, cards, displayMode }) {
                     <CreateCard onCreateCard={(title) => dispatch(addCard(title))} />
                     <ClearBoard onClearBoard={() => dispatch(clearBoard())} />
                     <PickDisplayMode displayMode={displayMode} onChangeDisplayMode={(mode) => dispatch(changeDisplayMode(mode))} />
+                    <Timer lastChanged={lastChanged} />
                 </div>
 
                 <div className="estimator-columns">
@@ -50,6 +54,7 @@ Estimator.propTypes = {
     columns: PropTypes.array.isRequired,
     cards: PropTypes.shape({}).isRequired,
     displayMode: PropTypes.oneOf(Object.values(DISPLAY_MODES)).isRequired,
+    lastChanged: PropTypes.number.isRequired,
 };
 
 export default Estimator;

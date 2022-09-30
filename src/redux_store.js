@@ -41,6 +41,7 @@ const initialState = {
     ],
     cards: {},
     displayMode: DISPLAY_MODES.FIBONACCI,
+    lastChanged: (new Date()).getTime(),
 };
 
 function copyState(oldState) {
@@ -66,6 +67,9 @@ function reduceAddCardReceived(state, payload) {
 
     // Add the Card to the ? Column
     newState.columns[6].push(card.cardId);
+
+    // Update the lastChanged timer
+    newState.lastChanged = (new Date()).getTime();
 
     // Return the new state
     return newState;
@@ -97,6 +101,9 @@ function reduceMoveCardReceived(state, payload) {
     // Update its move history
     newState.cards[payload.cardId].history.push(payload.toColumn);
 
+    // Update the lastChanged timer
+    newState.lastChanged = (new Date()).getTime();
+
     // Return the new state
     return newState;
 }
@@ -110,6 +117,9 @@ function reduceDeleteCardReceived(state, payload) {
 
     // Remove the Card from cards
     delete newState.cards[payload.cardId];
+
+    // Update the lastChanged timer
+    newState.lastChanged = (new Date()).getTime();
 
     // Return the new state
     return newState;
@@ -132,6 +142,9 @@ function reduceClearBoardReceived(state) {
         [],
     ];
     newState.cards = {};
+
+    // Update the lastChanged timer
+    newState.lastChanged = (new Date()).getTime();
 
     // Return the new state
     return newState;

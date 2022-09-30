@@ -227,6 +227,7 @@ export function subscribeToRequestInitialState() {
             'Estimator.request_initial_state',
             () => {
                 const state = getState();
+                // TODO: reset our lastChanged timer when someone joins, since the new person may still need to review the cards
 
                 getSession().publish('Estimator.set_initial_state', [state.cards.cards, state.cards.columns, state.cards.displayMode]);
             },

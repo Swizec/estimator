@@ -3456,6 +3456,7 @@ __metadata:
     eslint-plugin-react: ^7.21.5
     eslint-plugin-react-hooks: 4.6.0
     file-loader: ^6.2.0
+    format-duration: ^2.0.0
     gh-pages: ^3.1.0
     history: ^5.0.0
     imports-loader: ^1.2.0
@@ -3721,6 +3722,13 @@ __metadata:
   version: 2.0.2
   resolution: "flatted@npm:2.0.2"
   checksum: 473c754db7a529e125a22057098f1a4c905ba17b8cc269c3acf77352f0ffa6304c851eb75f6a1845f74461f560e635129ca6b0b8a78fb253c65cea4de3d776f2
+  languageName: node
+  linkType: hard
+
+"format-duration@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "format-duration@npm:2.0.0"
+  checksum: 4158ef22aa813b151b9f0d27e6044d3035b98a23c7d5d269364c26c6aa0d9f05536346096e4996b9f492ffad30aa79195102a6d66ed0d6cb9fccf14b5d756c57
   languageName: node
   linkType: hard
 
