@@ -7,9 +7,11 @@ import { moveCard } from '~/actions';
 import Card from '~/components/Card/Card';
 
 import '~/components/Column/Column.css';
-import { ItemTypes } from '~/constants';
+import { DISPLAY_MODE_LABEL_MAP, DISPLAY_MODES, ItemTypes } from '~/constants';
 
-function Column({ columnId, cardIds, cards }) {
+function Column({
+    columnId, cardIds, cards, displayMode,
+}) {
     const dispatch = useDispatch();
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.CARD,
@@ -38,7 +40,7 @@ function Column({ columnId, cardIds, cards }) {
     return (
         <div className={columnClass} ref={drop}>
             <div className="column-header">
-                {columnId}
+                {DISPLAY_MODE_LABEL_MAP[displayMode][columnId]}
             </div>
             <div className="column-body">
                 {cardComponents}
@@ -48,9 +50,10 @@ function Column({ columnId, cardIds, cards }) {
 }
 
 Column.propTypes = {
-    columnId: PropTypes.string.isRequired,
+    columnId: PropTypes.number.isRequired,
     cardIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     cards: PropTypes.shape({}).isRequired,
+    displayMode: PropTypes.oneOf(Object.values(DISPLAY_MODES)).isRequired,
 };
 
 export default Column;

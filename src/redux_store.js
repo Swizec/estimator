@@ -10,6 +10,7 @@ import {
     GETTING_INITIAL_STATE,
     INITIALIZATION_COMPLETE,
     MOVE_CARD_RECEIVED,
+    CHANGE_DISPLAY_MODE_RECEIVED,
     SET_INITIAL_STATE,
     SET_INITIAL_STATE_TIMER,
     SUBSCRIBE_TO_ADD_CARD_FAILED,
@@ -19,9 +20,9 @@ import {
     SUBSCRIBE_TO_MOVE_CARD_FAILED,
     SUBSCRIBING_TO_INITIAL_STATE,
     UNSUBSCRIBE_FROM_INITIAL_STATE_FAILED,
-    UNSUBSCRIBING_FROM_INITIAL_STATE,
+    UNSUBSCRIBING_FROM_INITIAL_STATE, SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED,
 } from '~/actions';
-import { LOADING_STATES } from '~/constants';
+import { LOADING_STATES, DISPLAY_MODES } from '~/constants';
 
 // TODO: split out 'cards' state tree reducers from 'app status' state tree reducers
 const initialState = {
@@ -29,16 +30,17 @@ const initialState = {
     appErrorDescription: '',
     receiveInitialStateSubscription: null,
     initialStateTimer: null,
-    columns: {
-        1: [],
-        2: [],
-        3: [],
-        5: [],
-        8: [],
-        13: [],
-        '?': [],
-    },
+    columns: [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ],
     cards: {},
+    displayMode: DISPLAY_MODES.FIBONACCI,
 };
 
 function copyState(oldState) {
@@ -63,22 +65,17 @@ function reduceAddCardReceived(state, payload) {
     };
 
     // Add the Card to the ? Column
-    newState.columns['?'].push(card.cardId);
+    newState.columns[6].push(card.cardId);
 
     // Return the new state
     return newState;
 }
 
 function removeFromAllColumns(columns, cardId) {
-    let index;
-
-    Object.keys(columns).forEach(
-        (columnId) => {
-            index = columns[columnId].indexOf(cardId);
-            if (index !== -1) {
-                columns[columnId].splice(index, 1);
-            }
-        },
+    return columns.map(
+        (column) => column.filter(
+            (id) => id !== cardId,
+        ),
     );
 }
 
@@ -92,7 +89,7 @@ function reduceMoveCardReceived(state, payload) {
     const newState = copyState(state);
 
     // Remove the cardId from all columns
-    removeFromAllColumns(newState.columns, payload.cardId);
+    newState.columns = removeFromAllColumns(newState.columns, payload.cardId);
 
     // Add the cardId to the new Column
     newState.columns[payload.toColumn].push(payload.cardId);
@@ -109,7 +106,7 @@ function reduceDeleteCardReceived(state, payload) {
     const newState = copyState(state);
 
     // Remove the cardId from all columns
-    removeFromAllColumns(newState.columns, payload.cardId);
+    newState.columns = removeFromAllColumns(newState.columns, payload.cardId);
 
     // Remove the Card from cards
     delete newState.cards[payload.cardId];
@@ -125,16 +122,27 @@ function reduceClearBoardReceived(state) {
     // Modify the state
     // TODO: it'd be nice if we could just copy this portion out of the initial state.  Probably trivial once
     // TODO: the server events and board state are separated.
-    newState.columns = {
-        1: [],
-        2: [],
-        3: [],
-        5: [],
-        8: [],
-        13: [],
-        '?': [],
-    };
+    newState.columns = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ];
     newState.cards = {};
+
+    // Return the new state
+    return newState;
+}
+
+function reduceChangeDisplayModeReceived(state, payload) {
+    // Copy the old state
+    const newState = copyState(state);
+
+    // Set the new display mode
+    newState.displayMode = payload.displayMode;
 
     // Return the new state
     return newState;
@@ -224,6 +232,18 @@ function reduceSubscribeToClearBoardFailed(state, payload) {
     return newState;
 }
 
+function reduceSubscribeToChangeDisplayModeFailed(state, payload) {
+    // Copy the old state
+    const newState = copyState(state);
+
+    // Update the state
+    newState.appState = LOADING_STATES.ERROR;
+    newState.appErrorDescription = `Sorry, but we were unable to subscribe to receiving change display mode events.  This was the reason given:${payload.reason}`;
+
+    // Return the new state
+    return newState;
+}
+
 function reduceConnectingToServer(state) {
     // Copy the old state
     const newState = copyState(state);
@@ -275,6 +295,7 @@ function reduceSetInitialState(state, payload) {
     // Update the state
     newState.cards = payload.cards;
     newState.columns = payload.columns;
+    newState.displayMode = payload.displayMode;
 
     // Return the new state
     return newState;
@@ -312,6 +333,8 @@ function cards(state = initialState, action) {
         return reduceDeleteCardReceived(state, action.payload);
     case CLEAR_BOARD_RECEIVED:
         return reduceClearBoardReceived(state, action.payload);
+    case CHANGE_DISPLAY_MODE_RECEIVED:
+        return reduceChangeDisplayModeReceived(state, action.payload);
     case CONNECTING_TO_SERVER:
         return reduceConnectingToServer(state, action.payload);
     case CONNECTION_CLOSED:
@@ -338,6 +361,8 @@ function cards(state = initialState, action) {
         return reduceSubscribeToDeleteCardFailed(state, action.payload);
     case SUBSCRIBE_TO_CLEAR_BOARD_FAILED:
         return reduceSubscribeToClearBoardFailed(state, action.payload);
+    case SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED:
+        return reduceSubscribeToChangeDisplayModeFailed(state, action.payload);
     case INITIALIZATION_COMPLETE:
         return reduceInitializationComplete(state, action.payload);
     default:
