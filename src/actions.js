@@ -26,6 +26,7 @@ export const SUBSCRIBE_TO_ADD_CARD_FAILED = 'SUBSCRIBE_TO_ADD_CARD_FAILED';
 export const SUBSCRIBE_TO_MOVE_CARD_FAILED = 'SUBSCRIBE_TO_MOVE_CARD_FAILED';
 export const SUBSCRIBE_TO_DELETE_CARD_FAILED = 'SUBSCRIBE_TO_DELETE_CARD_FAILED';
 export const SUBSCRIBE_TO_CLEAR_BOARD_FAILED = 'SUBSCRIBE_TO_CLEAR_BOARD_FAILED';
+export const SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED = 'SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED';
 
 export const INITIALIZATION_COMPLETE = 'INITIALIZATION_COMPLETE';
 
@@ -35,6 +36,7 @@ export const ADD_CARD_RECEIVED = 'ADD_CARD_RECEIVED';
 export const MOVE_CARD_RECEIVED = 'MOVE_CARD_RECEIVED';
 export const DELETE_CARD_RECEIVED = 'DELETE_CARD_RECEIVED';
 export const CLEAR_BOARD_RECEIVED = 'CLEAR_BOARD_RECEIVED';
+export const CHANGE_DISPLAY_MODE_RECEIVED = 'CHANGE_DISPLAY_MODE_RECEIVED';
 
 export function connectingToServer() {
     // TODO: maybe include the URI we're connecting to here?
@@ -139,12 +141,22 @@ export function subscribeToClearBoardFailed(reason) {
     };
 }
 
-export function setInitialState(cards, columns) {
+export function subscribeToChangeDisplayModeFailed(reason) {
+    return {
+        type: SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED,
+        payload: {
+            reason,
+        },
+    };
+}
+
+export function setInitialState(cards, columns, displayMode) {
     return {
         type: SET_INITIAL_STATE,
         payload: {
             cards,
             columns,
+            displayMode,
         },
     };
 }
@@ -198,6 +210,15 @@ export function clearBoardReceived() {
     };
 }
 
+export function changeDisplayModeReceived(displayMode) {
+    return {
+        type: CHANGE_DISPLAY_MODE_RECEIVED,
+        payload: {
+            displayMode,
+        },
+    };
+}
+
 // "Thunks"
 export function subscribeToRequestInitialState() {
     return (dispatch, getState) => {
@@ -207,7 +228,7 @@ export function subscribeToRequestInitialState() {
             () => {
                 const state = getState();
 
-                getSession().publish('Estimator.set_initial_state', [state.cards.cards, state.cards.columns]);
+                getSession().publish('Estimator.set_initial_state', [state.cards.cards, state.cards.columns, state.cards.displayMode]);
             },
         ).then(
             () => {
@@ -291,6 +312,24 @@ export function subscribeToClearBoard() {
     };
 }
 
+export function subscribeToChangeDisplayMode() {
+    return (dispatch) => {
+        getSession().subscribe(
+            'Estimator.change_display_mode',
+            (data) => {
+                const displayMode = data[0];
+
+                dispatch(changeDisplayModeReceived(displayMode));
+            },
+        ).then(
+            null,
+            (reason) => {
+                dispatch(subscribeToChangeDisplayModeFailed(reason));
+            },
+        );
+    };
+}
+
 export function unsubscribedFromInitialState() {
     return (dispatch) => {
         // We're ready to start working now, so go subscribe to all the various events we'll want to receive
@@ -299,6 +338,7 @@ export function unsubscribedFromInitialState() {
         dispatch(subscribeToMoveCard());
         dispatch(subscribeToDeleteCard());
         dispatch(subscribeToClearBoard());
+        dispatch(subscribeToChangeDisplayMode());
 
         dispatch(initializationComplete());
     };
@@ -329,7 +369,7 @@ export function unsubscribeFromInitialState() {
     };
 }
 
-export function initialStateReceived(cards, columns) {
+export function initialStateReceived(cards, columns, displayMode) {
     return (dispatch, getState) => {
         const state = getState();
 
@@ -341,7 +381,7 @@ export function initialStateReceived(cards, columns) {
         clearTimeout(state.cards.initialStateTimer);
         dispatch(setInitialStateTimer(null));
 
-        dispatch(setInitialState(cards, columns));
+        dispatch(setInitialState(cards, columns, displayMode));
 
         dispatch(unsubscribeFromInitialState());
     };
@@ -392,7 +432,7 @@ export function subscribeToInitialState() {
         getSession().subscribe(
             'Estimator.set_initial_state',
             (data) => {
-                dispatch(initialStateReceived(data[0], data[1]));
+                dispatch(initialStateReceived(data[0], data[1], data[2]));
 
                 dispatch(unsubscribeFromInitialState());
             },
@@ -475,5 +515,15 @@ export function clearBoard() {
         dispatch(clearBoardReceived());
 
         getSession().publish('Estimator.ClearBoard', []);
+    };
+}
+
+export function changeDisplayMode(displayMode) {
+    return (dispatch) => {
+        // Change the mode locally
+        dispatch(changeDisplayModeReceived(displayMode));
+
+        // Broadcast to other clients that the display mode has changed
+        getSession().publish('Estimator.change_display_mode', [displayMode]);
     };
 }

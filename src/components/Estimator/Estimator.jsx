@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { DndProvider } from 'react-dnd';
@@ -6,20 +7,23 @@ import { useDispatch } from 'react-redux';
 import ClearBoard from '~/components/ClearBoard/ClearBoard';
 import Column from '~/components/Column/Column';
 import CreateCard from '~/components/CreateCard/CreateCard';
-import { addCard, clearBoard } from '~/actions';
+import { addCard, changeDisplayMode, clearBoard } from '~/actions';
 
 import '~/components/Estimator/Estimator.css';
+import { DISPLAY_MODES } from '~/constants';
+import PickDisplayMode from '~/components/PickDisplayMode/PickDisplayMode';
 
-function Estimator({ columns, cards }) {
+function Estimator({ columns, cards, displayMode }) {
     const dispatch = useDispatch();
 
-    const columnsComponents = Object.keys(columns).map(
-        (columnId) => (
+    const columnsComponents = columns.map(
+        (column, columnId) => (
             <Column
-                key={columnId}
+                key={`column_${columnId}`}
                 columnId={columnId}
-                cardIds={columns[columnId]}
+                cardIds={column}
                 cards={cards}
+                displayMode={displayMode}
             />
         ),
     );
@@ -30,6 +34,7 @@ function Estimator({ columns, cards }) {
                 <div className="toolbar">
                     <CreateCard onCreateCard={(title) => dispatch(addCard(title))} />
                     <ClearBoard onClearBoard={() => dispatch(clearBoard())} />
+                    <PickDisplayMode displayMode={displayMode} onChangeDisplayMode={(mode) => dispatch(changeDisplayMode(mode))} />
                 </div>
 
                 <div className="estimator-columns">
@@ -41,8 +46,10 @@ function Estimator({ columns, cards }) {
 }
 
 Estimator.propTypes = {
-    columns: PropTypes.shape({}).isRequired,
+    // eslint-disable-next-line react/forbid-prop-types
+    columns: PropTypes.array.isRequired,
     cards: PropTypes.shape({}).isRequired,
+    displayMode: PropTypes.oneOf(Object.values(DISPLAY_MODES)).isRequired,
 };
 
 export default Estimator;
