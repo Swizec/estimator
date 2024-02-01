@@ -9,7 +9,7 @@ import {
     unregisterSubscription,
 } from "~/crossbar_connector";
 
-const VITE_ESTIMATOR_NAMESPACE = "estimator-xi";
+const VITE_ESTIMATOR_NAMESPACE = import.meta.env.VITE_ESTIMATOR_NAMESPACE;
 
 // TODO: split out user-initiated actions from server-connection-related actions
 
