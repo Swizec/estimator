@@ -1,42 +1,50 @@
-import { Connection } from 'autobahn-browser';
-import { v4 } from 'uuid';
-import { INITIAL_STATE_SUBSCRIPTION, LOADING_STATES } from '~/constants';
+import { Connection } from "autobahn-browser";
+import { v4 } from "uuid";
+import { INITIAL_STATE_SUBSCRIPTION, LOADING_STATES } from "~/constants";
 import {
     getSession,
     getSubscription,
     registerSession,
     registerSubscription,
     unregisterSubscription,
-} from '~/crossbar_connector';
+} from "~/crossbar_connector";
+
+const VITE_ESTIMATOR_NAMESPACE = "estimator-xi";
 
 // TODO: split out user-initiated actions from server-connection-related actions
 
 // Connection-related actions
-export const CONNECTING_TO_SERVER = 'CONNECTING_TO_SERVER';
-export const CONNECTION_CLOSED = 'CONNECTION_CLOSED';
-export const SUBSCRIBING_TO_INITIAL_STATE = 'SUBSCRIBING_TO_INITIAL_STATE';
-export const SUBSCRIBE_TO_INITIAL_STATE_FAILED = 'SUBSCRIBE_TO_INITIAL_STATE_FAILED';
-export const GETTING_INITIAL_STATE = 'GETTING_INITIAL_STATE';
-export const SET_INITIAL_STATE_TIMER = 'SET_INITIAL_STATE_TIMER';
-export const UNSUBSCRIBING_FROM_INITIAL_STATE = 'UNSUBSCRIBING_FROM_INITIAL_STATE';
-export const UNSUBSCRIBE_FROM_INITIAL_STATE_FAILED = 'UNSUBSCRIBE_FROM_INITIAL_STATE_FAILED';
+export const CONNECTING_TO_SERVER = "CONNECTING_TO_SERVER";
+export const CONNECTION_CLOSED = "CONNECTION_CLOSED";
+export const SUBSCRIBING_TO_INITIAL_STATE = "SUBSCRIBING_TO_INITIAL_STATE";
+export const SUBSCRIBE_TO_INITIAL_STATE_FAILED =
+    "SUBSCRIBE_TO_INITIAL_STATE_FAILED";
+export const GETTING_INITIAL_STATE = "GETTING_INITIAL_STATE";
+export const SET_INITIAL_STATE_TIMER = "SET_INITIAL_STATE_TIMER";
+export const UNSUBSCRIBING_FROM_INITIAL_STATE =
+    "UNSUBSCRIBING_FROM_INITIAL_STATE";
+export const UNSUBSCRIBE_FROM_INITIAL_STATE_FAILED =
+    "UNSUBSCRIBE_FROM_INITIAL_STATE_FAILED";
 
 // For this set, we intentionally don't care about the success case changing the app state
-export const SUBSCRIBE_TO_ADD_CARD_FAILED = 'SUBSCRIBE_TO_ADD_CARD_FAILED';
-export const SUBSCRIBE_TO_MOVE_CARD_FAILED = 'SUBSCRIBE_TO_MOVE_CARD_FAILED';
-export const SUBSCRIBE_TO_DELETE_CARD_FAILED = 'SUBSCRIBE_TO_DELETE_CARD_FAILED';
-export const SUBSCRIBE_TO_CLEAR_BOARD_FAILED = 'SUBSCRIBE_TO_CLEAR_BOARD_FAILED';
-export const SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED = 'SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED';
+export const SUBSCRIBE_TO_ADD_CARD_FAILED = "SUBSCRIBE_TO_ADD_CARD_FAILED";
+export const SUBSCRIBE_TO_MOVE_CARD_FAILED = "SUBSCRIBE_TO_MOVE_CARD_FAILED";
+export const SUBSCRIBE_TO_DELETE_CARD_FAILED =
+    "SUBSCRIBE_TO_DELETE_CARD_FAILED";
+export const SUBSCRIBE_TO_CLEAR_BOARD_FAILED =
+    "SUBSCRIBE_TO_CLEAR_BOARD_FAILED";
+export const SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED =
+    "SUBSCRIBE_TO_CHANGE_DISPLAY_MODE_FAILED";
 
-export const INITIALIZATION_COMPLETE = 'INITIALIZATION_COMPLETE';
+export const INITIALIZATION_COMPLETE = "INITIALIZATION_COMPLETE";
 
 // Server-received actions
-export const SET_INITIAL_STATE = 'SET_INITIAL_STATE';
-export const ADD_CARD_RECEIVED = 'ADD_CARD_RECEIVED';
-export const MOVE_CARD_RECEIVED = 'MOVE_CARD_RECEIVED';
-export const DELETE_CARD_RECEIVED = 'DELETE_CARD_RECEIVED';
-export const CLEAR_BOARD_RECEIVED = 'CLEAR_BOARD_RECEIVED';
-export const CHANGE_DISPLAY_MODE_RECEIVED = 'CHANGE_DISPLAY_MODE_RECEIVED';
+export const SET_INITIAL_STATE = "SET_INITIAL_STATE";
+export const ADD_CARD_RECEIVED = "ADD_CARD_RECEIVED";
+export const MOVE_CARD_RECEIVED = "MOVE_CARD_RECEIVED";
+export const DELETE_CARD_RECEIVED = "DELETE_CARD_RECEIVED";
+export const CLEAR_BOARD_RECEIVED = "CLEAR_BOARD_RECEIVED";
+export const CHANGE_DISPLAY_MODE_RECEIVED = "CHANGE_DISPLAY_MODE_RECEIVED";
 
 export function connectingToServer() {
     // TODO: maybe include the URI we're connecting to here?
@@ -223,111 +231,116 @@ export function changeDisplayModeReceived(displayMode) {
 export function subscribeToRequestInitialState() {
     return (dispatch, getState) => {
         // Sub to requests for initial state, for future clients
-        getSession().subscribe(
-            'Estimator.request_initial_state',
-            () => {
-                const state = getState();
-                // TODO: reset our lastChanged timer when someone joins, since the new person may still need to review the cards
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
+                () => {
+                    const state = getState();
+                    // TODO: reset our lastChanged timer when someone joins, since the new person may still need to review the cards
 
-                getSession().publish('Estimator.set_initial_state', [state.cards.cards, state.cards.columns, state.cards.displayMode]);
-            },
-        ).then(
-            () => {
-            },
-            (reason) => {
-                dispatch(subscribeToRequestInitialStateFailed(reason));
-            },
-        );
+                    getSession().publish(
+                        `${VITE_ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
+                        [
+                            state.cards.cards,
+                            state.cards.columns,
+                            state.cards.displayMode,
+                        ]
+                    );
+                }
+            )
+            .then(
+                () => {},
+                (reason) => {
+                    dispatch(subscribeToRequestInitialStateFailed(reason));
+                }
+            );
     };
 }
 
 export function subscribeToAddCard() {
     return (dispatch) => {
-        getSession().subscribe(
-            'Estimator.new_card',
-            (data) => {
-                const card = data[0];
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.new_card`,
+                (data) => {
+                    const card = data[0];
 
-                dispatch(addCardReceived(card));
-            },
-        ).then(
-            () => {
-            },
-            (reason) => {
-                dispatch(subscribeToAddCardFailed(reason));
-            },
-        );
+                    dispatch(addCardReceived(card));
+                }
+            )
+            .then(
+                () => {},
+                (reason) => {
+                    dispatch(subscribeToAddCardFailed(reason));
+                }
+            );
     };
 }
 
 export function subscribeToMoveCard() {
     return (dispatch) => {
-        getSession().subscribe(
-            'Estimator.move_card',
-            (data) => {
-                const cardId = data[0];
-                const toColumn = data[1];
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.move_card`,
+                (data) => {
+                    const cardId = data[0];
+                    const toColumn = data[1];
 
-                dispatch(moveCardReceived(cardId, toColumn));
-            },
-        ).then(
-            null,
-            (reason) => {
+                    dispatch(moveCardReceived(cardId, toColumn));
+                }
+            )
+            .then(null, (reason) => {
                 dispatch(subscribeToMoveCardFailed(reason));
-            },
-        );
+            });
     };
 }
 
 export function subscribeToDeleteCard() {
     return (dispatch) => {
-        getSession().subscribe(
-            'Estimator.delete_card',
-            (data) => {
-                const cardId = data[0];
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.delete_card`,
+                (data) => {
+                    const cardId = data[0];
 
-                dispatch(deleteCardReceived(cardId));
-            },
-        ).then(
-            null,
-            (reason) => {
+                    dispatch(deleteCardReceived(cardId));
+                }
+            )
+            .then(null, (reason) => {
                 dispatch(subscribeToDeleteCardFailed(reason));
-            },
-        );
+            });
     };
 }
 
 export function subscribeToClearBoard() {
     return (dispatch) => {
-        getSession().subscribe(
-            'Estimator.ClearBoard',
-            () => {
-                dispatch(clearBoardReceived());
-            },
-        ).then(
-            null,
-            (reason) => {
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`,
+                () => {
+                    dispatch(clearBoardReceived());
+                }
+            )
+            .then(null, (reason) => {
                 dispatch(subscribeToClearBoardFailed(reason));
-            },
-        );
+            });
     };
 }
 
 export function subscribeToChangeDisplayMode() {
     return (dispatch) => {
-        getSession().subscribe(
-            'Estimator.change_display_mode',
-            (data) => {
-                const displayMode = data[0];
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
+                (data) => {
+                    const displayMode = data[0];
 
-                dispatch(changeDisplayModeReceived(displayMode));
-            },
-        ).then(
-            null,
-            (reason) => {
+                    dispatch(changeDisplayModeReceived(displayMode));
+                }
+            )
+            .then(null, (reason) => {
                 dispatch(subscribeToChangeDisplayModeFailed(reason));
-            },
-        );
+            });
     };
 }
 
@@ -350,19 +363,25 @@ export function unsubscribeFromInitialState() {
         const state = getState();
 
         if (state.cards.appState !== LOADING_STATES.GETTING_INITIAL_STATE) {
-            dispatch(connectionClosed(`Illegal state transition in unsubscribeFromInitialState.  From:${state.appState}`));
+            dispatch(
+                connectionClosed(
+                    `Illegal state transition in unsubscribeFromInitialState.  From:${state.appState}`
+                )
+            );
             return;
         }
 
         // Unsub from set_initial_state, since we won't need it any more
-        getSession().unsubscribe(getSubscription(INITIAL_STATE_SUBSCRIPTION)).then(
-            () => {
-                dispatch(unsubscribedFromInitialState());
-            },
-            (error) => {
-                dispatch(unsubscribeFromInitialStateFailed(error));
-            },
-        );
+        getSession()
+            .unsubscribe(getSubscription(INITIAL_STATE_SUBSCRIPTION))
+            .then(
+                () => {
+                    dispatch(unsubscribedFromInitialState());
+                },
+                (error) => {
+                    dispatch(unsubscribeFromInitialStateFailed(error));
+                }
+            );
 
         dispatch(unsubscribingFromInitialState());
 
@@ -404,16 +423,16 @@ export function requestInitialState() {
         dispatch(gettingInitialState());
 
         // Broadcast out a request for getting the initial state (we'll take whoever comes back first as our state)
-        getSession().publish('Estimator.request_initial_state', []);
+        getSession().publish(
+            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
+            []
+        );
 
         // We may be the first people in the room, in which case our request to get the initial state will never return
         // So, set a timer instead to wait for a little while before just assuming we're alone
-        const timer = setTimeout(
-            () => {
-                dispatch(initialStateTimeout());
-            },
-            5000,
-        );
+        const timer = setTimeout(() => {
+            dispatch(initialStateTimeout());
+        }, 5000);
 
         dispatch(setInitialStateTimer(timer));
     };
@@ -424,28 +443,37 @@ export function subscribeToInitialState() {
         const state = getState();
 
         if (state.cards.appState !== LOADING_STATES.CONNECTING_TO_SERVER) {
-            dispatch(connectionClosed(`Illegal state transition in subscribeToInitialState.  From:${state.appState}`));
+            dispatch(
+                connectionClosed(
+                    `Illegal state transition in subscribeToInitialState.  From:${state.appState}`
+                )
+            );
             return;
         }
 
         dispatch(subscribingToInitialState());
 
-        getSession().subscribe(
-            'Estimator.set_initial_state',
-            (data) => {
-                dispatch(initialStateReceived(data[0], data[1], data[2]));
+        getSession()
+            .subscribe(
+                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
+                (data) => {
+                    dispatch(initialStateReceived(data[0], data[1], data[2]));
 
-                dispatch(unsubscribeFromInitialState());
-            },
-        ).then(
-            (subscription) => {
-                registerSubscription(INITIAL_STATE_SUBSCRIPTION, subscription);
-                dispatch(requestInitialState());
-            },
-            (error) => {
-                dispatch(subscribeToInitialStateFailed(error));
-            },
-        );
+                    dispatch(unsubscribeFromInitialState());
+                }
+            )
+            .then(
+                (subscription) => {
+                    registerSubscription(
+                        INITIAL_STATE_SUBSCRIPTION,
+                        subscription
+                    );
+                    dispatch(requestInitialState());
+                },
+                (error) => {
+                    dispatch(subscribeToInitialStateFailed(error));
+                }
+            );
     };
 }
 
@@ -487,7 +515,9 @@ export function addCard(title) {
         dispatch(addCardReceived(card));
 
         // Broadcast to other clients that the Card has been created
-        getSession().publish('Estimator.new_card', [card]);
+        getSession().publish(`${VITE_ESTIMATOR_NAMESPACE}.Estimator.new_card`, [
+            card,
+        ]);
     };
 }
 
@@ -497,7 +527,10 @@ export function moveCard(cardId, toColumn) {
         dispatch(moveCardReceived(cardId, toColumn));
 
         // Broadcast to other clients that the Card has been moved
-        getSession().publish('Estimator.move_card', [cardId, toColumn]);
+        getSession().publish(
+            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.move_card`,
+            [cardId, toColumn]
+        );
     };
 }
 
@@ -507,7 +540,10 @@ export function deleteCard(cardId) {
         dispatch(deleteCardReceived(cardId));
 
         // Broadcast to other clients that the Card has been deleted
-        getSession().publish('Estimator.delete_card', [cardId]);
+        getSession().publish(
+            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.delete_card`,
+            [cardId]
+        );
     };
 }
 
@@ -515,7 +551,10 @@ export function clearBoard() {
     return (dispatch) => {
         dispatch(clearBoardReceived());
 
-        getSession().publish('Estimator.ClearBoard', []);
+        getSession().publish(
+            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`,
+            []
+        );
     };
 }
 
@@ -525,6 +564,9 @@ export function changeDisplayMode(displayMode) {
         dispatch(changeDisplayModeReceived(displayMode));
 
         // Broadcast to other clients that the display mode has changed
-        getSession().publish('Estimator.change_display_mode', [displayMode]);
+        getSession().publish(
+            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
+            [displayMode]
+        );
     };
 }
