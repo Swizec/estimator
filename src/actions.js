@@ -9,7 +9,8 @@ import {
     unregisterSubscription,
 } from "~/crossbar_connector";
 
-const VITE_ESTIMATOR_NAMESPACE = import.meta.env.VITE_ESTIMATOR_NAMESPACE;
+const ESTIMATOR_NAMESPACE =
+    new URLSearchParams(window.location.search).get("team") ?? "global";
 
 // TODO: split out user-initiated actions from server-connection-related actions
 
@@ -233,13 +234,13 @@ export function subscribeToRequestInitialState() {
         // Sub to requests for initial state, for future clients
         getSession()
             .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
+                `${ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
                 () => {
                     const state = getState();
                     // TODO: reset our lastChanged timer when someone joins, since the new person may still need to review the cards
 
                     getSession().publish(
-                        `${VITE_ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
+                        `${ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
                         [
                             state.cards.cards,
                             state.cards.columns,
@@ -260,14 +261,11 @@ export function subscribeToRequestInitialState() {
 export function subscribeToAddCard() {
     return (dispatch) => {
         getSession()
-            .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.new_card`,
-                (data) => {
-                    const card = data[0];
+            .subscribe(`${ESTIMATOR_NAMESPACE}.Estimator.new_card`, (data) => {
+                const card = data[0];
 
-                    dispatch(addCardReceived(card));
-                }
-            )
+                dispatch(addCardReceived(card));
+            })
             .then(
                 () => {},
                 (reason) => {
@@ -280,15 +278,12 @@ export function subscribeToAddCard() {
 export function subscribeToMoveCard() {
     return (dispatch) => {
         getSession()
-            .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.move_card`,
-                (data) => {
-                    const cardId = data[0];
-                    const toColumn = data[1];
+            .subscribe(`${ESTIMATOR_NAMESPACE}.Estimator.move_card`, (data) => {
+                const cardId = data[0];
+                const toColumn = data[1];
 
-                    dispatch(moveCardReceived(cardId, toColumn));
-                }
-            )
+                dispatch(moveCardReceived(cardId, toColumn));
+            })
             .then(null, (reason) => {
                 dispatch(subscribeToMoveCardFailed(reason));
             });
@@ -299,7 +294,7 @@ export function subscribeToDeleteCard() {
     return (dispatch) => {
         getSession()
             .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.delete_card`,
+                `${ESTIMATOR_NAMESPACE}.Estimator.delete_card`,
                 (data) => {
                     const cardId = data[0];
 
@@ -315,12 +310,9 @@ export function subscribeToDeleteCard() {
 export function subscribeToClearBoard() {
     return (dispatch) => {
         getSession()
-            .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`,
-                () => {
-                    dispatch(clearBoardReceived());
-                }
-            )
+            .subscribe(`${ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`, () => {
+                dispatch(clearBoardReceived());
+            })
             .then(null, (reason) => {
                 dispatch(subscribeToClearBoardFailed(reason));
             });
@@ -331,7 +323,7 @@ export function subscribeToChangeDisplayMode() {
     return (dispatch) => {
         getSession()
             .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
+                `${ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
                 (data) => {
                     const displayMode = data[0];
 
@@ -424,7 +416,7 @@ export function requestInitialState() {
 
         // Broadcast out a request for getting the initial state (we'll take whoever comes back first as our state)
         getSession().publish(
-            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
+            `${ESTIMATOR_NAMESPACE}.Estimator.request_initial_state`,
             []
         );
 
@@ -455,7 +447,7 @@ export function subscribeToInitialState() {
 
         getSession()
             .subscribe(
-                `${VITE_ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
+                `${ESTIMATOR_NAMESPACE}.Estimator.set_initial_state`,
                 (data) => {
                     dispatch(initialStateReceived(data[0], data[1], data[2]));
 
@@ -515,7 +507,7 @@ export function addCard(title) {
         dispatch(addCardReceived(card));
 
         // Broadcast to other clients that the Card has been created
-        getSession().publish(`${VITE_ESTIMATOR_NAMESPACE}.Estimator.new_card`, [
+        getSession().publish(`${ESTIMATOR_NAMESPACE}.Estimator.new_card`, [
             card,
         ]);
     };
@@ -527,10 +519,10 @@ export function moveCard(cardId, toColumn) {
         dispatch(moveCardReceived(cardId, toColumn));
 
         // Broadcast to other clients that the Card has been moved
-        getSession().publish(
-            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.move_card`,
-            [cardId, toColumn]
-        );
+        getSession().publish(`${ESTIMATOR_NAMESPACE}.Estimator.move_card`, [
+            cardId,
+            toColumn,
+        ]);
     };
 }
 
@@ -540,10 +532,9 @@ export function deleteCard(cardId) {
         dispatch(deleteCardReceived(cardId));
 
         // Broadcast to other clients that the Card has been deleted
-        getSession().publish(
-            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.delete_card`,
-            [cardId]
-        );
+        getSession().publish(`${ESTIMATOR_NAMESPACE}.Estimator.delete_card`, [
+            cardId,
+        ]);
     };
 }
 
@@ -551,10 +542,7 @@ export function clearBoard() {
     return (dispatch) => {
         dispatch(clearBoardReceived());
 
-        getSession().publish(
-            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`,
-            []
-        );
+        getSession().publish(`${ESTIMATOR_NAMESPACE}.Estimator.ClearBoard`, []);
     };
 }
 
@@ -565,7 +553,7 @@ export function changeDisplayMode(displayMode) {
 
         // Broadcast to other clients that the display mode has changed
         getSession().publish(
-            `${VITE_ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
+            `${ESTIMATOR_NAMESPACE}.Estimator.change_display_mode`,
             [displayMode]
         );
     };
