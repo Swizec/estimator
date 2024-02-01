@@ -1,6 +1,6 @@
 const CONFIG = {
     crossbar_uri: "wss://crossbar.bebs.net/ws",
-    realm: "estimator-xi",
+    realm: "realm1",
 };
 
 export default CONFIG;
